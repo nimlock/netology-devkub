@@ -61,3 +61,9 @@
 >
 >**Получение файла**
 >curl -X GET http://localhost/images/4e6df220-295e-4231-82bc-45e4b1484430.jpg
+
+Вспомогательные материалы размещены в папке [help](./help/).
+
+
+_Возможно для выполнения будет полезна [статья](https://www.nginx.com/blog/deploying-nginx-plus-as-an-api-gateway-part-1/)_
+
