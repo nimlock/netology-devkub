@@ -67,3 +67,6 @@ services:
       - storage
       - uploader
       - security
+
+  check-post:
+    image: nginx:alpine
