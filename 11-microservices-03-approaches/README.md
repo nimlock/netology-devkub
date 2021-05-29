@@ -24,6 +24,10 @@
 >Логин в Grafana должен быть admin пароль qwerty123456
 
 
+Набор сервисов в [compose-файле](project/docker-compose.yaml) я дополнил prometheus и grafana. Настройки новых сервисов вынесены в папки [prometheus](project/prometheus) и [grafana](project/grafana). Для prometheus заданы параметры расположения метрик наблюдаемых сервисов, а для grafana указаны необходимые [datasource](project/grafana/provisioning/datasources/import.yml) и [dashboard](project/grafana/provisioning/src/dashboards/my_api_dashboard.json).
+
+После такой подготовки донастройка стека сервисов не требуется: после запуска можно попасть в grafana по ссылке http://localhost:8081, авторизоваться с заданными выше логином и паролем и открывать дашборд.
+
 ## Задача 2: Логи (необязательная, со звездочкой*)
 >
 >Продолжить работу по задаче API Gateway: сервисы используемые в задаче пишут логи в stdout. 
