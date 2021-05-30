@@ -1,0 +1,21 @@
+services:
+  vm2_shard2:
+    image: redis
+    container_name: vm2_shard2
+    restart: on-failure
+    volumes:
+      - ../config/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+
+  vm2_replica3:
+    image: redis
+    container_name: vm2_replica3
+    restart: on-failure
+    volumes:
+      - ../config/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+
+networks:
+  default:
+    external:
+      name: redis_cluster

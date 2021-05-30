@@ -16,3 +16,143 @@
 >
 >![11-04-01](img/schema.png)
 >
+
+Вместо использования виртуальных машин я буду организовывать кластер на основе проектов docker-compose. Их именование будет `vm1..3`, а конфигурации будут расположены в соответствующих папках в этом репозитории.
+
+Конфигурация инстансов redis в данном случае может быть одинаковой, будем монтировать единый файл [config/redis.conf](config/redis.conf).
+
+Для межсервисного взаимодействия потребуется виртуальная сеть docker. Создадим её командой:
+
+```
+docker network create redis_cluster
+```
+
+Запустим все инстансы:
+
+```
+docker-compose -f vm1/docker-compose.yaml up -d
+docker-compose -f vm2/docker-compose.yaml up -d
+docker-compose -f vm3/docker-compose.yaml up -d
+```
+
+К сожалению, для настройки кластера имена хостов не подходят - при организации кластера возникает ошибка:
+
+```
+Node vm2_shard2:6379 replied with error:
+ERR Invalid node address specified: vm1_shard1:6379
+```
+
+Так что дальше нам потребуются ip-адреса добавляемых нод. Для получения этой информации выполним команду:
+
+```
+ivan@kubang:~$ docker inspect -f '{{ (index .NetworkSettings.Networks "redis_cluster").IPAddress }}' vm1_shard1 vm2_shard2 vm3_shard3 vm3_replica1 vm1_replica2 vm2_replica3
+192.168.64.2
+192.168.64.5
+192.168.64.6
+192.168.64.7
+192.168.64.3
+192.168.64.4
+```
+
+Все работы по настройке кластера будем производить с отдельного контейнера. Запустим его командой:
+
+```
+docker run --rm -it --network redis_cluster --name redis_control redis bash
+```
+
+Соберём кластер из мастер-нод указав их ip-адреса и порты:
+
+```
+redis-cli --cluster create 192.168.64.2:6379 192.168.64.5:6379 192.168.64.6:6379
+```
+
+Добавим каждой мастер-ноде соответствующую реплику:
+
+```
+redis-cli --cluster add-node 192.168.64.7:6379 192.168.64.2:6379 --cluster-slave
+redis-cli --cluster add-node 192.168.64.3:6379 192.168.64.5:6379 --cluster-slave
+redis-cli --cluster add-node 192.168.64.4:6379 192.168.64.6:6379 --cluster-slave
+```
+
+Узнать текущий статус кластера можно командой:
+
+```
+redis-cli -c -h 192.168.64.2 -p 6379 cluster nodes
+```
+
+По выводу последней команды видно, что кластер находится в желаемом состоянии:
+
+```
+daa00d9c10763a0e30aaee9bff896c99b457b9a2 192.168.64.3:6379@16379 slave 768e36039fdd4d060b518c20554b6831c3300a79 0 1622382879096 2 connected
+ff3759812ec54d2dc631bc39173b94e3dd7c5626 192.168.64.2:6379@16379 myself,master - 0 1622382878000 1 connected 0-5460
+86b24d7e4dd709ce6d9ad4f6ea8a93303bd56df8 192.168.64.6:6379@16379 master - 0 1622382877592 3 connected 10923-16383
+768e36039fdd4d060b518c20554b6831c3300a79 192.168.64.5:6379@16379 master - 0 1622382878595 2 connected 5461-10922
+b2200484912fd312a9ee4b47a675303878735254 192.168.64.4:6379@16379 slave 86b24d7e4dd709ce6d9ad4f6ea8a93303bd56df8 0 1622382878093 3 connected
+b0212db6e76ff50d77cf6eb3df91bd49897992e4 192.168.64.7:6379@16379 slave ff3759812ec54d2dc631bc39173b94e3dd7c5626 0 1622382878000 1 connected
+```
+
+Другой способ убедиться в корректности настройки:
+
+```
+root@2d55252d739a:/data# redis-cli --cluster info vm1_shard1:6379
+vm1_shard1:6379 (ff375981...) -> 0 keys | 5461 slots | 1 slaves.
+192.168.64.6:6379 (86b24d7e...) -> 0 keys | 5461 slots | 1 slaves.
+192.168.64.5:6379 (768e3603...) -> 0 keys | 5462 slots | 1 slaves.
+```
+
+Настройка кластера redis завершена.
+
+---
+
+Проверим работу кластера. Подключимся к первой мастер-ноде и запишем некоторые данные:
+
+```
+root@2d55252d739a:/data# redis-cli -c -h 192.168.64.2 -p 6379              
+192.168.64.2:6379> set animal dog
+-> Redirected to slot [10850] located at 192.168.64.5:6379
+OK
+192.168.64.2:6379> exit
+```
+
+Подключимся к любой другой ноде и попытаемся извлечь данные:
+
+```
+root@2d55252d739a:/data# redis-cli -c -h 192.168.64.6 -p 6379
+192.168.64.6:6379> get animal
+-> Redirected to slot [10850] located at 192.168.64.5:6379
+"dog"
+192.168.64.5:6379> exit
+```
+
+Всё успешно, данные доступны.
+
+Теперь выключим "виртуальную машину" vm2, на которой располагается нода с адресом 192.168.64.5 записавшая тестовые данные:
+
+```
+docker-compose -f vm2/docker-compose.yaml down
+```
+
+Проверим статус кластера:
+
+```
+root@2d55252d739a:/data# redis-cli --cluster info 192.168.64.2:6379
+Could not connect to Redis at 192.168.64.5:6379: No route to host
+Could not connect to Redis at 192.168.64.4:6379: No route to host
+192.168.64.2:6379 (ff375981...) -> 1 keys | 5461 slots | 1 slaves.
+192.168.64.3:6379 (daa00d9c...) -> 1 keys | 5462 slots | 0 slaves.
+192.168.64.6:6379 (86b24d7e...) -> 0 keys | 5461 slots | 0 slaves.
+[OK] 2 keys in 3 masters.
+0.00 keys per slot on average.
+```
+
+Состояние ожидаемое. Теперь проверим доступность данных:
+
+```
+root@2d55252d739a:/data# redis-cli -c -h 192.168.64.2 -p 6379
+192.168.64.2:6379> get animal
+-> Redirected to slot [10850] located at 192.168.64.3:6379
+"dog"
+192.168.64.3:6379> exit
+```
+
+Всё отлично - данные нам отдала реплика vm1_replica2.
