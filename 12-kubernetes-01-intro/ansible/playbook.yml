@@ -1,0 +1,14 @@
+---
+  - name: Copy ssh id to managed hosts
+    hosts: netology-minikube
+    tags: init
+    roles:
+      - role: init_role
+      
+
+  - name:
+    hosts: netology-minikube
+    tags: check-connection
+    tasks: 
+      - name: Get Ping
+        ping:

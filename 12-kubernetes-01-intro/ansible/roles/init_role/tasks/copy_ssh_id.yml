@@ -1,0 +1,4 @@
+---
+  - name: copy ssh id
+    command: ssh-copy-id -i ~/.ssh/id_rsa.pub -o StrictHostKeyChecking=no -p {{ target_port | default(22) }} {{ target_user }}@{{ target_host }}
+    delegate_to: 127.0.0.1

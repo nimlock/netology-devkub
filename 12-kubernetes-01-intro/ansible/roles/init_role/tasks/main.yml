@@ -1,0 +1,13 @@
+---
+  - name: copy ssh key to {{ inventory_hostname }}
+    include_tasks: "copy_ssh_id.yml"
+    vars:
+      target_user: "{{ ansible_user }}"
+      target_host: "{{ ansible_host }}"
+
+  - name: print debug
+    debug:
+      msg: 
+      - "***********************"
+      - "Just debug here."
+      - "***********************"
