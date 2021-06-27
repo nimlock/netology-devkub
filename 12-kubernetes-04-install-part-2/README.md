@@ -12,6 +12,9 @@
 >* в качестве CRI — containerd;
 >* запуск etcd производить на мастере.
 
+За основу своего инвентаря я взял [пример inventory.ini](https://github.com/kubernetes-sigs/kubespray/blob/master/inventory/sample/inventory.ini) из github-репозитория kubespray. Для использования CRI containerd я добавил переменную `container_manager=containerd` всем хостам в инвентаре.  
+В итоге, убрав лишнее и добавив нужное получился такой инвентарь: [inventory.ini](./inventory.ini).
+
 ## Задание 2 (*): подготовить и проверить инвентарь для кластера в AWS
 >Часть новых проектов хотят запускать на мощностях AWS. Требования похожи:
 >* разворачивать 5 нод: 1 мастер и 4 рабочие ноды;
