@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task2-deployment-back
+  namespace: production
+  labels:
+    app: task2-back
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task2-back
+  template:
+    metadata:
+      labels:
+        app: task2-back
+    spec:
+      containers:
+      - name: netology-backend
+        image: nimlock/netology-homework-13.xx-backend:production
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9000
+        volumeMounts:
+        - name: backend-env
+          mountPath: /app/.env
+          subPath: .env
+          readOnly: true
+      volumes:
+      - name: backend-env
+        configMap:
+          name: task2-config
+          items:
+            - key: backend.env
+              path: .env
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task2-deployment-front
+  namespace: production
+  labels:
+    app: task2-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task2-front
+  template:
+    metadata:
+      labels:
+        app: task2-front
+    spec:
+      containers:
+      - name: netology-frontend
+        image: nimlock/netology-homework-13.xx-frontend:production
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: frontend-env
+          mountPath: /app/.env
+          subPath: .env
+          readOnly: true
+      volumes:
+      - name: frontend-env
+        configMap:
+          name: task2-config
+          items:
+            - key: frontend.env
+              path: .env

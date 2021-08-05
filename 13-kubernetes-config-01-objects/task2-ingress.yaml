@@ -1,0 +1,13 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: task2-ingress
+  namespace: production
+spec:
+  rules:
+  - host: task2.13-1.netology
+    http:
+      paths:
+      - backend:
+          serviceName: task2-front
+          servicePort: 80

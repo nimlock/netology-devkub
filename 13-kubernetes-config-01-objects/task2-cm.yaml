@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: task2-config
+  namespace: production
+data:
+  backend.env: |-
+    DATABASE_URL=postgres://postgres:postgres@task2-db.production:5432/news
+  frontend.env: |-
+    BASE_URL=http://task2.13-1.netology

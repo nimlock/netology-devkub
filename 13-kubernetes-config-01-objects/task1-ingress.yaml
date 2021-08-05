@@ -1,0 +1,13 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: task1-ingress
+  namespace: stage
+spec:
+  rules:
+  - host: task1.13-1.netology
+    http:
+      paths:
+      - backend:
+          serviceName: task1-svc
+          servicePort: 80
