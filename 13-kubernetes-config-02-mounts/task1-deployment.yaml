@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task1-deployment
+  namespace: stage
+  labels:
+    app: task1-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task1-app
+  template:
+    metadata:
+      labels:
+        app: task1-app
+    spec:
+      containers:
+      - name: netology-backend
+        image: nimlock/netology-homework-13.xx-backend:stage
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9000
+        volumeMounts:
+        - name: backend-env
+          mountPath: /app/.env
+          subPath: .env
+          readOnly: true
+        - name: static-volume
+          mountPath: /static-in-back
+      - name: netology-frontend
+        image: nimlock/netology-homework-13.xx-frontend:stage
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: frontend-env
+          mountPath: /app/.env
+          subPath: .env
+          readOnly: true
+        - name: static-volume
+          mountPath: /static-in-front
+      volumes:
+      - name: backend-env
+        configMap:
+          name: task1-config
+          items:
+            - key: backend.env
+              path: .env
+      - name: frontend-env
+        configMap:
+          name: task1-config
+          items:
+            - key: frontend.env
+              path: .env
+      - name: static-volume
+        emptyDir: {}
