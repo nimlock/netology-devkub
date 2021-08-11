@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "helm-app-chart.fullname" . }}-front
+  labels:
+    {{- include "helm-app-chart.labels" . | nindent 4 }}
+    {{- toYaml .Values.labels.front | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount.front }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "helm-app-chart.selectorLabels" . | nindent 6 }}
+      {{- toYaml .Values.labels.front | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "helm-app-chart.selectorLabels" . | nindent 8 }}
+        {{- toYaml .Values.labels.front | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-front
+          image: "{{ .Values.image.front.repository }}:{{ .Values.image.front.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.front.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.endpoint.front }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.endpoint.front }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.endpoint.front }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            {{- toYaml .Values.env.front | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

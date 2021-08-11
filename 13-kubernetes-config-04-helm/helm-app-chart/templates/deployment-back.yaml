@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "helm-app-chart.fullname" . }}-back
+  labels:
+    {{- include "helm-app-chart.labels" . | nindent 4 }}
+    {{- toYaml .Values.labels.back | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount.back }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "helm-app-chart.selectorLabels" . | nindent 6 }}
+      {{- toYaml .Values.labels.back | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "helm-app-chart.selectorLabels" . | nindent 8 }}
+        {{- toYaml .Values.labels.back | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-back
+          image: "{{ .Values.image.back.repository }}:{{ .Values.image.back.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.back.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.endpoint.back }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.endpoint.back }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.endpoint.back }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: DATABASE_URL
+              value: postgres://postgres:postgres@{{ include "helm-app-chart.fullname" . }}-db:{{ .Values.service.db.port }}/news
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

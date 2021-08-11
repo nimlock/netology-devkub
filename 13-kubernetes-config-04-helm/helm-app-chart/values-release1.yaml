@@ -1,0 +1,14 @@
+ingress:
+  enabled: true
+  hosts:
+    - host: release1.task2.13-4.netology
+      paths:
+      - path: /
+        backend:
+          # serviceName: chart-example.local
+          servicePort: 80
+
+env:    
+  front:
+    - name: BASE_URL
+      value: http://release1.task2.13-4.netology

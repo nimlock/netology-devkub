@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "helm-app-chart.fullname" . }}-db
+  labels:
+    {{- include "helm-app-chart.labels" . | nindent 4 }}
+    {{- toYaml .Values.labels.db | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - port: {{ .Values.service.db.port }}
+      protocol: TCP
+  selector:
+    {{- include "helm-app-chart.selectorLabels" . | nindent 4 }}
+    {{- toYaml .Values.labels.db | nindent 4 }}
