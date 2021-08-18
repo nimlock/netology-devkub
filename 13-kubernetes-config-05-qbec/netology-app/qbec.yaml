@@ -1,0 +1,13 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: netology-app
+spec:
+  environments:
+    stage:
+      defaultNamespace: stage-13-5
+      server: https://192.168.88.26:6443
+    production:
+      defaultNamespace: production-13-5
+      server: https://192.168.88.26:6443
+  vars: {}
